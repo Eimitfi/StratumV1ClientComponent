@@ -35,11 +35,11 @@ class StratumClientTalker:
     extranonce1 = None
     extranonce2_size = None
 
-    def launchTalker(self,uri,port,solutionSubmitQueue,newWorkQueue,addWorkerQueue,responseQueue):
-        print("starting talker")
+    def launchTalker(self,uri,port,solutionSubmitQueue,newWorkQueue,addWorkerQueue,responseQueue,errorQueue):
         sys.stdout.flush()
         self.uri = uri
         self.port = port
+        self.errorQueue = errorQueue
         self.responseQueue = responseQueue
         self.solutionSubmitQueue = solutionSubmitQueue
         self.newWorkQueue = newWorkQueue
@@ -62,6 +62,7 @@ class StratumClientTalker:
                     if repl == "":
                         self.sock.close
                         print("connection closed by peer")
+                        errorQueue.put(1)
                         sys.stdout.flush()
                         sys.exit(1)
                     sys.stdout.flush()
@@ -87,7 +88,6 @@ class StratumClientTalker:
                         if message["id"] == 1:
                             self.extranonce1 = message["result"][1]
                             self.extranonce2_size = message["result"][2]
-                            print("subscription successful")
                             sys.stdout.flush()
                             continue
                         tmpId = message["id"]
@@ -107,7 +107,6 @@ class StratumClientTalker:
                 waitingResultsList.append(ServerResponse(self.sid,"solutionSubmit",solution.user + " " + solution.job_id, None,None))
                 sendToServer(self.sock,submit)
                 self.sid = self.sid + 1
-                print("received solution from master")
                 sys.stdout.flush()
 
 
@@ -118,7 +117,6 @@ class StratumClientTalker:
                 waitingResultsList.append(ServerResponse(self.sid,"addWorker",worker.user, None,None))
                 sendToServer(self.sock,jsonWorker)
                 self.sid = self.sid + 1
-                print("received new worker from master")
                 sys.stdout.flush()
                 
 
